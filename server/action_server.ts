@@ -1,5 +1,9 @@
 import * as express from 'express';
 import {Server} from "ws";
+
+import * as path from 'path';
+
+
 const  app = express();
 export  class  Product {
     constructor(
@@ -24,9 +28,13 @@ export  class Comment {
 
     }
 }
-app.get('/',(req,res)=>{
+
+// 设置访问首页
+app.use('/',express.static(path.join(__dirname,'..','client/untitled')))
+
+/*app.get('/',(req,res)=>{
     res.send("Hello Express");
-})
+})*/
 app.get('/api/products',(req,res)=>{
     let result=products
     let params=req.query;
@@ -53,7 +61,7 @@ app.get('/api/comments/:id',(req,res)=>{
 
 
 const server=app.listen(8000,"localhost",()=>{
-    console.log("服务器已经启动")
+    console.log("服务器已经启动,http://localhost:8000")
 })
 
 const products: Product[] = [
@@ -72,20 +80,49 @@ const   comments: Comment[] = [
     new Comment(5, 5, '2017-03-04 23:12:43', '双方都', 1.5, '还行吧'),
     new Comment(6, 6, '2017-03-04 23:12:43', '水电费V型', 3, '还行吧'),
 ];
+const subscription=new Map<any,number[]>()
 const  wsServer=new Server({port:8083});
 wsServer.on("connection",websocket=>{
-    websocket.send("这个消息是服务器主动推送的")
+    /*websocket.send("这个消息是服务器主动推送的")*/
     websocket.on("message",message=>{
-        console.log("message",message)
-    })
-})
+        let messageObj ={}
+        if (typeof message === "string") {
+              messageObj = JSON.parse(message);
+        }
+        let productIds=subscription.get(websocket) || [];
+        subscription.set(websocket,[...productIds,messageObj.productId]);
+        // console.log("subscription",messageObj.productId)
+    });
+});
+
+const currentBids= new Map<number,number>()
 
 setInterval(()=>{
-    if(wsServer.clients){
+    //每两秒钟生成一个新的报价并且推给客户端
+    products.forEach( p => {
+        let currentBid=currentBids.get(p.id) ||p.price;
+        let newBid =  (currentBid + Math.random() * 5).toFixed(2) ;
+        currentBids.set(p.id,Number(newBid))
+    })
+    //一个客户端会关注多个商品
+    subscription.forEach((productIds: number[] ,ws)=>{
+        if(ws.readyState===1){ //客户端还在线
+            let newBids=productIds.map( pid => ({
+                productId:pid,
+                bid: currentBids.get(pid)
+            }))
+            // console.log("newBids",newBids)
+            ws.send(JSON.stringify(newBids))
+        }else{
+            subscription.delete(ws)
+        }
+
+    })
+    /*if(wsServer.clients){
         wsServer.clients.forEach(client=>{
             client.send("这是定时推送")
         })
-    }
+    }*/
 },2000);
 
 
