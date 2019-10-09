@@ -51,10 +51,12 @@ app.get('/api/products',(req,res)=>{
 })
 
 app.get('/api/product/:id',(req,res)=>{
+    // @ts-ignore
     res.json(products.find((product)=>product.id==req.params.id))
 })
 
 app.get('/api/comments/:id',(req,res)=>{
+    // @ts-ignore
     res.json(comments.filter((comment:Comment)=>comment.productId==req.params.id))
 })
 
