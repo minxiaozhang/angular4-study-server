@@ -1,0 +1,20 @@
+{
+  "name": "server-td",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/express": "^4.17.1",
+    "@types/node": "^12.7.8",
+    "express": "^4.17.1",
+    "ws": "^7.1.2"
+  },
+  "devDependencies": {
+    "@types/ws": "^6.0.3"
+  }
+}
